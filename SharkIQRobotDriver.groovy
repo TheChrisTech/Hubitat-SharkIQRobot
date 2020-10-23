@@ -70,7 +70,7 @@ def refresh() {
             logging("d", "Refresh scheduled in $refreshInterval seconds.")
             runIn("$refreshInterval".toInteger(), refresh)
         }
-        else if (operatingMode in ["Charging on Dock"])
+        else if (operatingMode in ["Charging on Dock"] && batteryCapacity.toString() != "100")
         {
             logging("d", "Refresh scheduled in 300 seconds.")
             runIn(300, refresh)
@@ -78,7 +78,7 @@ def refresh() {
     }
     else if (!smartRefresh && refreshEnable)
     {
-        logging("d", "Refresh scheduled in $refreshInterval seconds.")
+        logging("d", "Refresh scheduled in $refreshInterval secondsaaa.")
         runIn("$refreshInterval".toInteger(), refresh)
     }
 }
@@ -112,6 +112,7 @@ def grabSharkInfo() {
         if (singleProperty.property.name == "GET_Battery_Capacity")
         {
             sendEvent(name: "Battery_Level", value: "$singleProperty.property.value", display: true, displayed: true)
+            batteryCapacity = singleProperty.property.value
         }
         else if (singleProperty.property.name == "GET_Recharging_To_Resume")
         {
@@ -162,10 +163,10 @@ def grabSharkInfo() {
 
     // Operating Mode
     operating_modes = ["Stopped", "Paused", "Running", "Returning to Dock"]
-    if (device.currentValue('Recharging_To_Resume') == "True" && operatingModeValue == "3") { 
+    if (device.currentValue('Recharging_To_Resume') == "True" && operatingModeValue.toString() == "3") { 
         operatingModeToSend = "Recharging to Continue" 
     }
-    else if (device.currentValue('Recharging_To_Resume') == "False" && operatingModeValue == "3") {
+    else if (device.currentValue('Recharging_To_Resume') == "False" && operatingModeValue.toString() == "3") {
         if (device.currentValue('Charging_Status') == "Fully Charged") {
             operatingModeToSend = "Resting on Dock" 
         }
@@ -181,7 +182,6 @@ def grabSharkInfo() {
     }
     sendEvent(name: "Operating_Mode", value: operatingModeToSend, display: true, displayed: true)
     operatingMode = operatingModeToSend
-
 
     def date = new Date()
     sendEvent(name: "Last_Refreshed", value: "$date", display: true, displayed: true)
