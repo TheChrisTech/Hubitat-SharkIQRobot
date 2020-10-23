@@ -28,11 +28,12 @@ import java.util.regex.*
 
 metadata {
     definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens") {    
-        command "start"
-        command "stop"
+        capability "Switch"
+        capability "Refresh"
         command "pause"
-        command "returnToBase"
+        command "stop"
         command "grabSharkInfo"
+        command "setPowerMode", [[name:"Set Power Mode", type: "ENUM",description: "Set Power Mode", constraints: ["Eco", "Normal", "Max"]]]
 
         attribute "Battery_Level", "integer"
         attribute "Operating_Mode", "text"
@@ -45,49 +46,89 @@ metadata {
     }
  
     preferences {
-        input(name: "loginusername", type: "string", title:"Email", description: "Shark Account Email Address", required: true, displayDuringSetup: true)
-        input(name: "loginpassword", type: "password", title:"Password", description: "Shark Account Password", required: true, displayDuringSetup: true)
-        input(name: "sharkdevicename", type: "string", title:"Device Name", description: "Name you've given your Shark Device within the App", required: true, displayDuringSetup: true)
-        input(name: "mobiletype", type: "enum", title:"Mobile Device", description: "Type of Mobile Device your Shark is setup on", required: true, displayDuringSetup: true, options:["Apple iOS", "Android OS"])
+        input(name: "loginusername", type: "string", title: "Email", description: "Shark Account Email Address", required: true, displayDuringSetup: true)
+        input(name: "loginpassword", type: "password", title: "Password", description: "Shark Account Password", required: true, displayDuringSetup: true)
+        input(name: "sharkdevicename", type: "string", title: "Device Name", description: "Name you've given your Shark Device within the App", required: true, displayDuringSetup: true)
+        input(name: "mobiletype", type: "enum", title: "Mobile Device", description: "Type of Mobile Device your Shark is setup on", required: true, displayDuringSetup: true, options:["Apple iOS", "Android OS"])
+        input(name: "refreshEnable", type: "bool", title: "Enable Refresh Interval", description: "If enabling, after you click 'Save Preferences', click the 'Refresh' button to start the schedule.", defaultValue: false)
+        input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of seconds between State Refreshes", required: true, displayDuringSetup: true, defaultValue: 60)
         input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
     }
 }
- 
-def start() {
-    runPostDatapointsCmd("SET_Operating_Mode", 2)
+
+def refresh() {
+    logging("d", "Refresh Triggered.")
+    grabSharkInfo()
+    if (refreshEnable)
+    {
+        logging("d", "Refresh scheduled in $refreshInterval seconds.")
+        runIn("$refreshInterval".toInteger(), refresh)
+    }
 }
  
-def stop() {
-    def stopresults = runPostDatapointsCmd("SET_Operating_Mode", 0)
+def on() {
+    runPostDatapointsCmd("SET_Operating_Mode", 2)
+    grabSharkInfo()
+}
+ 
+def off() {
+    def stopresults = runPostDatapointsCmd("SET_Operating_Mode", 3)
     logging("d", "$stopresults")
+    grabSharkInfo()
 }
 
 def pause() {
     runPostDatapointsCmd("SET_Operating_Mode", 1)
+    grabSharkInfo()
 }
 
-def returnToBase() {
-    runPostDatapointsCmd("SET_Operating_Mode", 3)
+def stop() {
+    runPostDatapointsCmd("SET_Operating_Mode", 0)
+    grabSharkInfo()
+}
+
+def setPowerMode(String powermode) {
+    power_modes = ["Normal", "Eco", "Max"]
+    powermodeint = power_modes.indexOf(powermode)
+    if (powermodeint >= 0) { runPostDatapointsCmd("SET_Power_Mode", powermodeint) }
+    grabSharkInfo()
 }
 
 def grabSharkInfo() {
-    battery = runGetPropertiesCmd("GET_Battery_Capacity").property.value[0]
-    sendEvent(name: "Battery_Level", value: "$battery", isStateChange: true, display: true, displayed: true)
-    operatingmode = runGetPropertiesCmd("GET_Operating_Mode").property.value[0]
-    sendEvent(name: "Operating_Mode", value: "$operatingmode", isStateChange: true, display: true, displayed: true)
-    powermode = runGetPropertiesCmd("GET_Power_Mode").property.value[0]
-    sendEvent(name: "Power_Mode", value: "$powermode", isStateChange: true, display: true, displayed: true)
-    rssi = runGetPropertiesCmd("GET_RSSI").property.value[0]
-    sendEvent(name: "RSSI", value: "$rssi", isStateChange: true, display: true, displayed: true)
-    errorcode = runGetPropertiesCmd("GET_Error_Code").property.value[0]
-    sendEvent(name: "Error_Code", value: "$errorcode", isStateChange: true, display: true, displayed: true)
-    volume = runGetPropertiesCmd("GET_Robot_Volume_Setting").property.value[0]
-    sendEvent(name: "Robot_Volume", value: "$volume", isStateChange: true, display: true, displayed: true)
-    fw = runGetPropertiesCmd("OTA_FW_VERSION").property.value[0]
-    sendEvent(name: "Firmware_Version", value: "$fw", isStateChange: true, display: true, displayed: true)
-
-    // GET_Error_Code
-    // GET_Robot_Volume_Setting
+    propertiesResults = runGetPropertiesCmd("names[]=GET_Battery_Capacity&names[]=GET_Operating_Mode&names[]=GET_Power_Mode&names[]=GET_RSSI&names[]=GET_Error_Code&names[]=GET_Robot_Volume_Setting&names[]=OTA_FW_VERSION")
+    propertiesResults.each { singleProperty ->
+        if (singleProperty.property.name == "GET_Battery_Capacity")
+        {
+            sendEvent(name: "Battery_Level", value: "$singleProperty.property.value", display: true, displayed: true)
+        }
+        else if (singleProperty.property.name == "GET_Operating_Mode")
+        {
+            operating_modes = ["Stopped", "Paused", "Running", "Return to Base"]
+            sendEvent(name: "Operating_Mode", value: operating_modes[singleProperty.property.value], display: true, displayed: true)
+        }
+        else if (singleProperty.property.name == "GET_Power_Mode")
+        {
+            power_modes = ["Normal", "Eco", "Max"]
+            sendEvent(name: "Power_Mode", value: power_modes[singleProperty.property.value], display: true, displayed: true)
+        }
+        else if (singleProperty.property.name == "GET_RSSI")
+        {
+            sendEvent(name: "RSSI", value: "$singleProperty.property.value", display: true, displayed: true)
+        }
+        else if (singleProperty.property.name == "GET_Error_Code")
+        {
+            error_codes = ["No error", "Side wheel is stuck","Side brush is stuck","Suction motor failed","Brushroll stuck","Side wheel is stuck (2)","Bumper is stuck","Cliff sensor is blocked","Battery power is low","No Dustbin","Fall sensor is blocked","Front wheel is stuck","Switched off","Magnetic strip error","Top bumper is stuck","Wheel encoder error"]
+            sendEvent(name: "Error_Code", value: error_codes[singleProperty.property.value], display: true, displayed: true)
+        }
+        else if (singleProperty.property.name == "GET_Robot_Volume_Setting")
+        {
+            sendEvent(name: "Robot_Volume", value: "$singleProperty.property.value", display: true, displayed: true)
+        }
+        else if (singleProperty.property.name == "OTA_FW_VERSION")
+        {
+            sendEvent(name: "Firmware_Version", value: "$singleProperty.property.value", display: true, displayed: true)
+        }
+    }
 }
 
 def initialLogin() {
@@ -95,7 +136,6 @@ def initialLogin() {
     getDevices()
     getUserProfile()
 }
-
 
 def runPostDatapointsCmd(String operation, Integer operationValue) {
     initialLogin()
@@ -118,7 +158,7 @@ def runGetPropertiesCmd(String operation) {
 		path: "/apiv1/dsns/$dsnForDevice/properties.json",
         requestContentType: "application/json",
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
-        queryString: "names[]=$operation".toString()
+        queryString: "$operation".toString()
     ]
     performHttpGet(params)
 }
