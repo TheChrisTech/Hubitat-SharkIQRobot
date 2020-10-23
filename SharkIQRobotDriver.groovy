@@ -21,11 +21,13 @@
  *    2020-10-17  Chris Stevens  Revision for newer AlyaNetworks API endpoints - Support for Multi Devices (Just create Multiple Drivers) - Spoof iOS or Android Devices when making API calls.
  *    2020-10-21  Chris Stevens  Toggle for Debug Logging - Shark States - Some code cleanup
  *    2020-10-22  Chris Stevens  Add Refresh - Re-add Switch - Optimize State API Calls
+ *    2020-10-23  Chris Stevens  Added "*Last_Refreshed" State
  *
  */
 
 import groovy.json.*
 import java.util.regex.*
+import java.text.SimpleDateFormat
 
 metadata {
     definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens") {    
@@ -44,6 +46,7 @@ metadata {
         attribute "Error_Code","text"
         attribute "Robot_Volume","text"
         attribute "Firmware_Version","text"
+        attribute "*Last_Refreshed","text"
     }
  
     preferences {
@@ -130,6 +133,8 @@ def grabSharkInfo() {
             sendEvent(name: "Firmware_Version", value: "$singleProperty.property.value", display: true, displayed: true)
         }
     }
+    def date = new Date()
+    sendEvent(name: "*Last_Refreshed", value: "$date", display: true, displayed: true)
 }
 
 def initialLogin() {
