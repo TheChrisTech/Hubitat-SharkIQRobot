@@ -20,6 +20,7 @@
  *    2020-10-16  Chris Stevens  Initial 'Public' Release
  *    2020-10-17  Chris Stevens  Revision for newer AlyaNetworks API endpoints - Support for Multi Devices (Just create Multiple Drivers) - Spoof iOS or Android Devices when making API calls.
  *    2020-10-21  Chris Stevens  Toggle for Debug Logging - Shark States - Some code cleanup
+ *    2020-10-22  Chris Stevens  Add Refresh - Re-add Switch - Optimize State API Calls
  *
  */
 
