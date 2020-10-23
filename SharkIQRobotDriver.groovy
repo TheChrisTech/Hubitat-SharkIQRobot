@@ -21,7 +21,7 @@
  *    2020-10-17  Chris Stevens  Revision for newer AlyaNetworks API endpoints - Support for Multi Devices (Just create Multiple Drivers) - Spoof iOS or Android Devices when making API calls.
  *    2020-10-21  Chris Stevens  Toggle for Debug Logging - Shark States - Some code cleanup
  *    2020-10-22  Chris Stevens  Add Refresh - Re-add Switch - Optimize State API Calls
- *    2020-10-23  Chris Stevens  Added "*Last_Refreshed" State
+ *    2020-10-23  Chris Stevens  Added "Last_Refreshed" State, Smart Refresh, Recharging_To_Resume State, Charging_Status State, Additional Operating_Mode State values, and Slight Delay when getting Refresh After Triggering Button. Also fixed the Pause Button and Last_Refreshed State, and removed the Stop Button.
  *
  */
 
