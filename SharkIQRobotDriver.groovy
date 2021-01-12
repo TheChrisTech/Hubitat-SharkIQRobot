@@ -1,7 +1,7 @@
 /**
  *  Shark IQ Robot
  *
- *  Copyright 2020 Chris Stevens
+ *  Copyright 2021 Chris Stevens
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -11,17 +11,11 @@
  *  Unless required by applicable law or agreed to in writing, software distributed under the License is distributed
  *  on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License
  *  for the specific language governing permissions and limitations under the License.
+ *  
+ *  GitHub link: https://github.com/TheChrisTech/Hubitat-SharkIQRobot
  *
- *  Change History:
- *
- *    Date        Who            What
- *    ----        ---            ----
- *    2020-02-13  Chris Stevens  Original Creation
- *    2020-10-16  Chris Stevens  Initial 'Public' Release
- *    2020-10-17  Chris Stevens  Revision for newer AlyaNetworks API endpoints - Support for Multi Devices (Just create Multiple Drivers) - Spoof iOS or Android Devices when making API calls.
- *    2020-10-21  Chris Stevens  Toggle for Debug Logging - Shark States - Some code cleanup
- *    2020-10-22  Chris Stevens  Add Refresh - Re-add Switch - Optimize State API Calls
- *    2020-10-23  Chris Stevens  Added "Last_Refreshed" State, Smart Refresh, Recharging_To_Resume State, Charging_Status State, Additional Operating_Mode State values, and Slight Delay when getting Refresh After Triggering Button. Also fixed the Pause Button and Last_Refreshed State, and removed the Stop Button.
+ *  Readme is outlined in README.md
+ *  Change History is outlined in CHANGELOG.md
  *
  */
 
@@ -33,6 +27,7 @@ metadata {
     definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens") {    
         capability "Switch"
         capability "Refresh"
+        capability "Momentary"
         command "pause"
         command "setPowerMode", [[name:"Set Power Mode", type: "ENUM",description: "Set Power Mode", constraints: ["Eco", "Normal", "Max"]]]
 
@@ -80,6 +75,17 @@ def refresh() {
     {
         logging("d", "Refresh scheduled in $refreshInterval secondsaaa.")
         runIn("$refreshInterval".toInteger(), refresh)
+    }
+}
+def push() {
+    grabSharkInfo()
+    if (operatingModeValue == 3)
+    {
+        on()
+    }
+    else 
+    {
+        off()
     }
 }
  
@@ -152,6 +158,7 @@ def grabSharkInfo() {
     }
 
     // Charging Status
+    // chargingStatusValue - 0 = NOT CHARGING, 1 = CHARGING
     charging_status = ["Not Charging", "Charging"]
     if (device.currentValue('Battery_Level') == "100" && chargingStatusValue == "0") {
         chargingStatusToSend = "Fully Charged" 
@@ -161,7 +168,8 @@ def grabSharkInfo() {
     }
     sendEvent(name: "Charging_Status", value: chargingStatusToSend, display: true, displayed: true)
 
-    // Operating Mode
+    // Operating Mode 
+    // operatingModeValue - 0 = STOPPED, 1 = PAUSED, 2 = ON, 3 = OFF
     operating_modes = ["Stopped", "Paused", "Running", "Returning to Dock"]
     if (device.currentValue('Recharging_To_Resume') == "True" && operatingModeValue.toString() == "3") { 
         operatingModeToSend = "Recharging to Continue" 
