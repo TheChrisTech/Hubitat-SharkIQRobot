@@ -1,6 +1,6 @@
 # Hubitat-SharkIQRobot
 
-![GitHub all releases](https://img.shields.io/github/downloads/ChrisTech/Hubitat-SharkIQRobot/total) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/ChrisTech/Hubitat-SharkIQRobot) ![GitHub issues](https://img.shields.io/github/issues-raw/TheChrisTech/Hubitat-SharkIQRobot)
+![GitHub all releases](https://img.shields.io/github/downloads/TheChrisTech/Hubitat-SharkIQRobot/total) ![GitHub release (latest by date)](https://img.shields.io/github/v/release/TheChrisTech/Hubitat-SharkIQRobot) ![GitHub issues](https://img.shields.io/github/issues-raw/TheChrisTech/Hubitat-SharkIQRobot)
 
 This integration was created by manipulating API requests that were captured through Charles Proxy and the iPhone Shark iOS App.
 
