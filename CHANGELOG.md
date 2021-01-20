@@ -5,6 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0]
+
+### Added
+
+- Clean Room Group1, Clean Room Group2, and Clean Room Group3 (buttons) - These buttons correlate with the 3 preferences on the page named the same. Because of limitations within Hubitat, a dynamic dropdown cannot be provided for easier selection. Therefore, you'll need to manually enter their values. More information can be found in the [README.md's Preferences](https://github.com/TheChrisTech/Hubitat-SharkIQRobot/blob/master/README.md#preferences)
+- Clean Specific Room (button) - A dropdown that provides you the ability to clean a specific room (selection via dropdown)
+- Available_Rooms (state) - Will read your map, and see what rooms you have configured. Provides an alphabetized list of rooms.
+
+## [1.0.4]
+
+### Changed
+
+- Fixed Driver Versioning
+
+## [1.0.3]
+
+### Changed
+
+- Fixed issue with HTTP Posts (caused broken driver - Do not use 1.0.2)
+
 ## [1.0.2]
 
 ### Added

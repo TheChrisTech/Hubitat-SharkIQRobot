@@ -18,6 +18,9 @@ Please send feedback and/or issues to the Hubitat Forum Thread: https://communit
 | Refresh Interval | Number of seconds between State Refreshes. |
 | Smart State Refresh | If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. Takes precedence over Scheduled State Refresh. |
 | Enable Debug Logging | Adds more logging information. |
+| Room Cleaning Group 1 | Group 1 that you can enter for specific room cleaning. Enter up to 3 rooms - Comma delimited (eg. 'Basement,Living Room,Bathroom') |
+| Room Cleaning Group 2 | Group 2 that you can enter for specific room cleaning. Enter up to 3 rooms - Comma delimited (eg. 'Family Room,Kitchen,Dining Room') |
+| Room Cleaning Group 3 | Group 3 that you can enter for specific room cleaning. Enter up to 3 rooms - Comma delimited (eg. 'Guest Bedroom,Foyer,Office') |
 
 <br>
 
@@ -26,6 +29,7 @@ Please send feedback and/or issues to the Hubitat Forum Thread: https://communit
 
 | State  | Description |
 | ------------- | ------------- |
+| Available_Rooms | This displays all the rooms you have configured on your map. |
 | Battery_Level | This displays the Shark's current battery level. |
 | Charging_Status | This displays the Shark's current charging status. More information can be found under [Charging Status](#charging-status) section. |
 | Error_Code | This displays the meaning to the error code number. More information can be found under [Error Codes](#error-codes) section. |
