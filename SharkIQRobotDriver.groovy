@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.x.x
+ *  Shark IQ Robot v1.1.0
  *
  *  Copyright 2021 Chris Stevens
  *
