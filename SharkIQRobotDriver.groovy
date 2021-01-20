@@ -32,6 +32,9 @@ metadata {
         command "pause"
         command "setPowerMode", [[name:"Set Power Mode to", type: "ENUM",description: "Set Power Mode", constraints: ["Eco", "Normal", "Max"]]]
         command "getRobotInfo", [[name:"Get verbose robot information and push to logs."]]
+        command "cleanRoom", [[name:"Clean Specific Room", type: "ENUM",description: "Clean Specific Room", constraints: ["Basement", "Bathroom", "Den", "Dining Room", "Family Room", "Foyer", "Guest Bedroom", "Hallway", "Kitchen", "Laundry Room", "Master Bathroom", "Master Bedroom", "Office", "Playroom" ]]]        
+        command "updateAvailableRooms"
+																   
 
         attribute "Battery_Level", "integer"
         attribute "Operating_Mode", "text"
@@ -43,6 +46,8 @@ metadata {
         attribute "Firmware_Version","text"
         attribute "Last_Refreshed","text"
         attribute "Recharging_To_Resume","text"
+        attribute "Available_Rooms","text"
+
     }
  
     preferences {
@@ -124,6 +129,10 @@ def locate() {
     runIn(10, refresh)
 }
 
+def cleanRoom(String room) {
+	  
+}
+
 def getRobotInfo(){
     propertiesResults = runGetPropertiesCmd("names[]=GET_Main_PCB_BL_Version&names[]=GET_Main_PCB_HW_Version&names[]=GET_Main_PCB_FW_Version&names[]=GET_Nav_Module_FW_Version&names[]=GET_Nav_Module_App_Version&names[]=GET_SCM_FW_Version")
     propertiesResults.each { singleProperty ->
@@ -153,6 +162,23 @@ def getRobotInfo(){
         }
     }
 }
+
+ def updateRoomList() {
+    logging("d", "Updating Available Rooms")
+    roomInitial = runPostDatapointsCmd("Mobile_App_Room_Definition", 0)
+    fileToGrab = roomInitial[0].datapoint.file
+    logging("d", "Going to grab this file: $fileToGrab")
+    def url = fileToGrab.toURL()
+    def fileResults = url.withInputStream{inputStream->
+        new groovy.json.JsonSlurper().parse(inputStream)
+    }
+    def roomList = []
+    fileResults.goZones.each { singleRoom ->
+        roomList << singleRoom.name
+    }
+    roomList.sort()
+    sendEvent(name: "Available_Rooms", value: roomList.toString(), display: true, displayed: true)
+ }
 
 def grabSharkInfo() {
     propertiesResults = runGetPropertiesCmd("names[]=GET_Battery_Capacity&names[]=GET_Recharging_To_Resume&names[]=GET_Charging_Status&names[]=GET_Operating_Mode&names[]=GET_Power_Mode&names[]=GET_RSSI&names[]=GET_Error_Code&names[]=GET_Robot_Volume_Setting&names[]=OTA_FW_VERSION")
