@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot
+ *  Shark IQ Robot v1.0.2
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -28,8 +28,10 @@ metadata {
         capability "Switch"
         capability "Refresh"
         capability "Momentary"
+        command "locate"
         command "pause"
-        command "setPowerMode", [[name:"Set Power Mode", type: "ENUM",description: "Set Power Mode", constraints: ["Eco", "Normal", "Max"]]]
+        command "setPowerMode", [[name:"Set Power Mode to", type: "ENUM",description: "Set Power Mode", constraints: ["Eco", "Normal", "Max"]]]
+        command "getRobotInfo", [[name:"Get verbose robot information and push to logs."]]
 
         attribute "Battery_Level", "integer"
         attribute "Operating_Mode", "text"
@@ -44,10 +46,10 @@ metadata {
     }
  
     preferences {
-        input(name: "loginusername", type: "string", title: "Email", description: "Shark Account Email Address", required: true, displayDuringSetup: true)
-        input(name: "loginpassword", type: "password", title: "Password", description: "Shark Account Password", required: true, displayDuringSetup: true)
-        input(name: "sharkdevicename", type: "string", title: "Device Name", description: "Name you've given your Shark Device within the App", required: true, displayDuringSetup: true)
-        input(name: "mobiletype", type: "enum", title: "Mobile Device", description: "Type of Mobile Device your Shark is setup on", required: true, displayDuringSetup: true, options:["Apple iOS", "Android OS"])
+        input(name: "loginUsername", type: "string", title: "Email", description: "Shark Account Email Address", required: true, displayDuringSetup: true)
+        input(name: "loginPassword", type: "password", title: "Password", description: "Shark Account Password", required: true, displayDuringSetup: true)
+        input(name: "sharkDeviceName", type: "string", title: "Device Name", description: "Name you've given your Shark Device within the App", required: true, displayDuringSetup: true)
+        input(name: "mobileType", type: "enum", title: "Mobile Device", description: "Type of Mobile Device your Shark is setup on", required: true, displayDuringSetup: true, options:["Apple iOS", "Android OS"])
         input(name: "refreshEnable", type: "bool", title: "Scheduled State Refresh", description: "If enabled, after you click 'Save Preferences', click the 'Refresh' button to start the schedule.", defaultValue: false)
         input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of seconds between State Refreshes", required: true, displayDuringSetup: true, defaultValue: 60)
         input(name: "smartRefresh", type: "bool", title: "Smart State Refresh", description: "If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. Takes precedence over Scheduled State Refresh.", required: true, displayDuringSetup: true, defaultValue: true)
@@ -73,7 +75,7 @@ def refresh() {
     }
     else if (!smartRefresh && refreshEnable)
     {
-        logging("d", "Refresh scheduled in $refreshInterval secondsaaa.")
+        logging("d", "Refresh scheduled in $refreshInterval seconds.")
         runIn("$refreshInterval".toInteger(), refresh)
     }
 }
@@ -91,17 +93,19 @@ def push() {
  
 def on() {
     runPostDatapointsCmd("SET_Operating_Mode", 2)
+    sendEvent(name:"Operating_Mode",value:"Running")
     runIn(10, refresh)
 }
  
 def off() {
-    def stopresults = runPostDatapointsCmd("SET_Operating_Mode", 3)
-    logging("d", "$stopresults")
+    runPostDatapointsCmd("SET_Operating_Mode", 3)
+    sendEvent(name:"Operating_Mode",value:"Returning to Dock")
     runIn(10, refresh)
 }
 
 def pause() {
     runPostDatapointsCmd("SET_Operating_Mode", 0)
+    sendEvent(name:"Operating_Mode",value:"Paused")
     runIn(10, refresh)
 }
 
@@ -110,6 +114,44 @@ def setPowerMode(String powermode) {
     powermodeint = power_modes.indexOf(powermode)
     if (powermodeint >= 0) { runPostDatapointsCmd("SET_Power_Mode", powermodeint) }
     runIn(10, refresh)
+}
+
+def locate() {
+    logging("d", "Locate Pushed.")
+    runPostDatapointsCmd("SET_Find_Device", 1)
+    sendEvent(name:"locate",value:"active")
+    runIn(5, runPostDatapointsCmd("SET_Find_Device", 0))
+    runIn(10, refresh)
+}
+
+def getRobotInfo(){
+    propertiesResults = runGetPropertiesCmd("names[]=GET_Main_PCB_BL_Version&names[]=GET_Main_PCB_HW_Version&names[]=GET_Main_PCB_FW_Version&names[]=GET_Nav_Module_FW_Version&names[]=GET_Nav_Module_App_Version&names[]=GET_SCM_FW_Version")
+    propertiesResults.each { singleProperty ->
+        if (singleProperty.property.name == "GET_Main_PCB_BL_Version")
+        {
+            logging("i", "Main_PCB_BL_Version: $singleProperty.property.value")
+        }
+        else if (singleProperty.property.name == "GET_Main_PCB_HW_Version")
+        {
+            logging("i", "Main_PCB_HW_Version: $singleProperty.property.value")
+        }
+        else if (singleProperty.property.name == "GET_Main_PCB_FW_Version")
+        {
+            logging("i", "Main_PCB_FW_Version: $singleProperty.property.value")
+        }
+        else if (singleProperty.property.name == "GET_Nav_Module_FW_Version")
+        {
+            logging("i", "Nav_Module_FW_Version: $singleProperty.property.value")
+        }
+        else if (singleProperty.property.name == "GET_Nav_Module_App_Version")
+        {
+            logging("i", "Nav_Module_App_Version: $singleProperty.property.value")
+        }
+        else if (singleProperty.property.name == "GET_SCM_FW_Version")
+        {
+            logging("i", "SCM_FW_Version: $singleProperty.property.value")
+        }
+    }
 }
 
 def grabSharkInfo() {
@@ -160,7 +202,7 @@ def grabSharkInfo() {
     // Charging Status
     // chargingStatusValue - 0 = NOT CHARGING, 1 = CHARGING
     charging_status = ["Not Charging", "Charging"]
-    if (device.currentValue('Battery_Level') == "100" && chargingStatusValue == "0") {
+    if (device.currentValue('Battery_Level') == "100") {
         chargingStatusToSend = "Fully Charged" 
     }
     else {
@@ -211,7 +253,8 @@ def runPostDatapointsCmd(String operation, Integer operationValue) {
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
         body: "{\"datapoint\":{\"value\":\"$operationValue\",\"metadata\":{\"userUUID\":\"$uuid\"}}}"
     ]
-    performHttpPost(params)
+    if ("SET" in operation) { performHttpPost(params) }
+    else { performHttpGet(params) }
 }
 
 def runGetPropertiesCmd(String operation) {
@@ -269,15 +312,15 @@ def login() {
     def localDevicePort = (devicePort==null) ? "80" : devicePort
     def app_id = ""
     def app_secret = ""
-    if (mobiletype == "Apple iOS") {
+    if (mobileType == "Apple iOS") {
         app_id = "Shark-iOS-field-id"
         app_secret = "Shark-iOS-field-_wW7SiwgrHN8dpU_ugCattOoDk8"
     }
-    else if (mobiletype == "Android OS") {
+    else if (mobileType == "Android OS") {
         app_id = "Shark-Android-field-id"
         app_secret = "Shark-Android-field-Wv43MbdXRM297HUHotqe6lU1n-w"
     }
-	def body = """{"user":{"email":"$loginusername","application":{"app_id":"$app_id","app_secret":"$app_secret"},"password":"$loginpassword"}}"""
+	def body = """{"user":{"email":"$loginUsername","application":{"app_id":"$app_id","app_secret":"$app_secret"},"password":"$loginPassword"}}"""
     
     //log.info body
 	def params = [
@@ -342,14 +385,14 @@ def getDevices() {
                 logging("d", "Response received from Shark in the postResponseHandler. $response.data")
                 def devicedsn = ""
                 for (devices in response.data.device ) {
-                    if ("$sharkdevicename" == "${devices.product_name}")
+                    if ("$sharkDeviceName" == "${devices.product_name}")
                     {   
                         dsnForDevice = "${devices.dsn}"
                     }
                 }
                 if ("$dsnForDevice" == '')
                 {
-                    logging("e", "$sharkdevicename did not match any product_name on your account. Please verify your `Device Name`.")
+                    logging("e", "$sharkDeviceName did not match any product_name on your account. Please verify your `Device Name`.")
                 }
                 return response
             }
@@ -370,6 +413,7 @@ def getDevices() {
 
 def logging(String status, String description) {
     if (debugEnable && status == "d"){ log.debug(description) }
+    else if (status == "i"){ log.info(description) }
     else if (status == "w"){ log.warn(description) }
     else if (status == "e"){ log.error(description) }
 }

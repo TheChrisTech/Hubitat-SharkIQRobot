@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.2]
+
+### Added
+
+- Get Robot Info (button) - Allows this to log out Specific Firmware and Hardware revisions to the logs (as 'info' level entries). This is to help troubleshoot differences some folks are seeing with behavior with this driver.
+- Info logging - Allows 'info' entries to be logged.
+- Locate (button) - This allows you to locate your Vacuum in your house. Runs for 5 seconds, then stops.
+
+### Changed
+
+- Logic for 'Fully Charged' - Device will be marked 'Fully Charged' if battery level is at 100%, regardless of charge state.
+
+## [1.0.1]
+
+### Changed
+
+- Fix Readme issues
+
 ## [1.0.0]
 
 ### Added
