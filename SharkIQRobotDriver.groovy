@@ -253,8 +253,7 @@ def runPostDatapointsCmd(String operation, Integer operationValue) {
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
         body: "{\"datapoint\":{\"value\":\"$operationValue\",\"metadata\":{\"userUUID\":\"$uuid\"}}}"
     ]
-    if ("SET" in operation) { performHttpPost(params) }
-    else { performHttpGet(params) }
+    performHttpPost(params)
 }
 
 def runGetPropertiesCmd(String operation) {
