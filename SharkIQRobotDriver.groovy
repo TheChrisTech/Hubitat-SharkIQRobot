@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.0.2
+ *  Shark IQ Robot v1.x.x
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -32,9 +32,11 @@ metadata {
         command "pause"
         command "setPowerMode", [[name:"Set Power Mode to", type: "ENUM",description: "Set Power Mode", constraints: ["Eco", "Normal", "Max"]]]
         command "getRobotInfo", [[name:"Get verbose robot information and push to logs."]]
-        command "cleanRoom", [[name:"Clean Specific Room", type: "ENUM",description: "Clean Specific Room", constraints: ["Basement", "Bathroom", "Den", "Dining Room", "Family Room", "Foyer", "Guest Bedroom", "Hallway", "Kitchen", "Laundry Room", "Master Bathroom", "Master Bedroom", "Office", "Playroom" ]]]        
+        command "cleanSpecificRoom", [[name:"Clean Specific Room", type: "ENUM",description: "Clean Specific Room", constraints: ["Basement", "Bathroom", "Den", "Dining Room", "Family Room", "Foyer", "Guest Bedroom", "Hallway", "Kitchen", "Laundry Room", "Master Bathroom", "Master Bedroom", "Office", "Playroom" ]]]        
         command "updateAvailableRooms"
-																   
+        command "cleanRoomGroup1"
+        command "cleanRoomGroup2"
+        command "cleanRoomGroup3"
 
         attribute "Battery_Level", "integer"
         attribute "Operating_Mode", "text"
@@ -47,7 +49,6 @@ metadata {
         attribute "Last_Refreshed","text"
         attribute "Recharging_To_Resume","text"
         attribute "Available_Rooms","text"
-
     }
  
     preferences {
@@ -59,6 +60,9 @@ metadata {
         input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of seconds between State Refreshes", required: true, displayDuringSetup: true, defaultValue: 60)
         input(name: "smartRefresh", type: "bool", title: "Smart State Refresh", description: "If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. Takes precedence over Scheduled State Refresh.", required: true, displayDuringSetup: true, defaultValue: true)
         input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
+        input(name: "roomCleanGroupOne" , type: "string", title:"Room Cleaning Group 1", description: "Enter up to 3 rooms - Comma delimited (eg. 'Basement,Living Room,Bathroom')", required: false, submitOnChange: true)
+        input(name: "roomCleanGroupTwo" , type: "string", title:"Room Cleaning Group 2", description: "Enter up to 3 rooms - Comma delimited (eg. 'Family Room,Kitchen,Dining Room')", required: false, submitOnChange: true)
+        input(name: "roomCleanGroupThree" , type: "string", title:"Room Cleaning Group 3", description: "Enter up to 3 rooms - Comma delimited (eg. 'Guest Bedroom,Foyer,Office')", required: false, submitOnChange: true)
     }
 }
 
@@ -129,8 +133,29 @@ def locate() {
     runIn(10, refresh)
 }
 
-def cleanRoom(String room) {
-	  
+def cleanSpecificRoom(String room) {
+    def pre = "80010bca02170a0b" // Static on all calls
+    def hexstring = room.getBytes().encodeHex() // Converts String to Hex
+    def post = "1a083736413830353841" // Static on all calls
+    String fullstring = pre + hexstring + post
+    def byteArrayForHex = hubitat.helper.HexUtils.hexStringToByteArray(fullstring)
+    def encoded = byteArrayForHex.encodeAsBase64().toString()
+    logging("d", encoded)
+    runPostDatapointsCmd("SET_Operating_Mode", 2)
+    runPostDatapointsCmd("SET_Areas_To_Clean", encoded.toString())
+}
+
+def cleanRoomGroup1(){
+    cleanSpecificRoom(roomCleanGroupOne)
+
+}
+
+def cleanRoomGroup2(){
+    cleanSpecificRoom(roomCleanGroupTwo)
+}
+
+def cleanRoomGroup3(){
+    cleanSpecificRoom(roomCleanGroupThree)
 }
 
 def getRobotInfo(){
@@ -269,8 +294,9 @@ def initialLogin() {
     getUserProfile()
 }
 
-def runPostDatapointsCmd(String operation, Integer operationValue) {
+def runPostDatapointsCmd(String operation, Object operationValue) {
     initialLogin()
+    logging("d", "operationValue: $operationValue")
     def localDevicePort = (devicePort==null) ? "80" : devicePort
 	def params = [
         uri: "https://ads-field.aylanetworks.com",
@@ -279,8 +305,7 @@ def runPostDatapointsCmd(String operation, Integer operationValue) {
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
         body: "{\"datapoint\":{\"value\":\"$operationValue\",\"metadata\":{\"userUUID\":\"$uuid\"}}}"
     ]
-    if ("SET" in operation) { performHttpPost(params) }
-    else { performHttpGet(params) }
+    performHttpPost(params)
 }
 
 def runGetPropertiesCmd(String operation) {
