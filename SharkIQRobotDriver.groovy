@@ -59,17 +59,18 @@ metadata {
         input(name: "refreshEnable", type: "bool", title: "Scheduled State Refresh", description: "If enabled, after you click 'Save Preferences', click the 'Refresh' button to start the schedule.", defaultValue: false)
         input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of seconds between State Refreshes", required: true, displayDuringSetup: true, defaultValue: 60)
         input(name: "smartRefresh", type: "bool", title: "Smart State Refresh", description: "If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. Takes precedence over Scheduled State Refresh.", required: true, displayDuringSetup: true, defaultValue: true)
-        input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
         input(name: "roomCleanGroupOne" , type: "string", title:"Room Cleaning Group 1", description: "Enter up to 3 rooms - Comma delimited (eg. 'Basement,Living Room,Bathroom')", required: false, submitOnChange: true)
         input(name: "roomCleanGroupTwo" , type: "string", title:"Room Cleaning Group 2", description: "Enter up to 3 rooms - Comma delimited (eg. 'Family Room,Kitchen,Dining Room')", required: false, submitOnChange: true)
         input(name: "roomCleanGroupThree" , type: "string", title:"Room Cleaning Group 3", description: "Enter up to 3 rooms - Comma delimited (eg. 'Guest Bedroom,Foyer,Office')", required: false, submitOnChange: true)
+        input(name: "googleHomeCompat", type: "bool", title: "Google Home Compatibility", description: "If enabled, Operating Mode will either be 'docked' or 'undocked'.", defaultValue: false)
+        input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
     }
 }
 
 def refresh() {
     logging("d", "Refresh Triggered.")
     grabSharkInfo()
-    if (smartRefresh) 
+    if (smartRefresh && !refreshEnable) 
     {
         if (operatingMode in ["Paused", "Running", "Returning to Dock", "Recharging to Continue"])
         {
@@ -81,12 +82,25 @@ def refresh() {
             logging("d", "Refresh scheduled in 300 seconds.")
             runIn(300, refresh)
         }
+        else
+        {
+            logging("d", "Not scheduling a refresh, because the operatingMode = $operatingMode")
+        }
     }
     else if (!smartRefresh && refreshEnable)
     {
         logging("d", "Refresh scheduled in $refreshInterval seconds.")
         runIn("$refreshInterval".toInteger(), refresh)
     }
+    else if (smartRefresh && refreshEnable)
+    {
+        logging("e", "Not scheduling refresh - Please enable only 1 refresh type (Smart or Scheduled).")
+    }
+    else
+    {
+        logging("d", "No options chosen for scheduled refresh.")
+    }
+
 }
 def push() {
     grabSharkInfo()
@@ -102,19 +116,22 @@ def push() {
  
 def on() {
     runPostDatapointsCmd("SET_Operating_Mode", 2)
-    sendEvent(name:"Operating_Mode",value:"Running")
+    eventSender("switch","on",true)
+    eventSender("Operating_Mode", "Running", true)
     runIn(10, refresh)
 }
  
 def off() {
     runPostDatapointsCmd("SET_Operating_Mode", 3)
-    sendEvent(name:"Operating_Mode",value:"Returning to Dock")
+    eventSender("switch","off",true)
+    eventSender("Operating_Mode", "Returning to Dock", true)
     runIn(10, refresh)
 }
 
 def pause() {
     runPostDatapointsCmd("SET_Operating_Mode", 0)
-    sendEvent(name:"Operating_Mode",value:"Paused")
+    eventSender("switch","off",true)
+    eventSender("Operating_Mode", "Paused", true)
     runIn(10, refresh)
 }
 
@@ -128,7 +145,7 @@ def setPowerMode(String powermode) {
 def locate() {
     logging("d", "Locate Pushed.")
     runPostDatapointsCmd("SET_Find_Device", 1)
-    sendEvent(name:"locate",value:"active")
+    eventSender("Locate", "Active", false)
     runIn(5, runPostDatapointsCmd("SET_Find_Device", 0))
     runIn(10, refresh)
 }
@@ -210,13 +227,13 @@ def grabSharkInfo() {
     propertiesResults.each { singleProperty ->
         if (singleProperty.property.name == "GET_Battery_Capacity")
         {
-            sendEvent(name: "Battery_Level", value: "$singleProperty.property.value", display: true, displayed: true)
+            eventSender("Battery_Level", "$singleProperty.property.value", true)
             batteryCapacity = singleProperty.property.value
         }
         else if (singleProperty.property.name == "GET_Recharging_To_Resume")
         {
             recharging_resume = ["False", "True"]
-            sendEvent(name: "Recharging_To_Resume", value: recharging_resume[singleProperty.property.value], display: true, displayed: true)
+            eventSender("Recharging_To_Resume", recharging_resume[singleProperty.property.value], true)
         }
         else if (singleProperty.property.name == "GET_Charging_Status")
         {
@@ -229,24 +246,24 @@ def grabSharkInfo() {
         else if (singleProperty.property.name == "GET_Power_Mode")
         {
             power_modes = ["Normal", "Eco", "Max"]
-            sendEvent(name: "Power_Mode", value: power_modes[singleProperty.property.value], display: true, displayed: true)
+            eventSender("Power_Mode", power_modes[singleProperty.property.value], true)
         }
         else if (singleProperty.property.name == "GET_RSSI")
         {
-            sendEvent(name: "RSSI", value: "$singleProperty.property.value", display: true, displayed: true)
+            eventSender("RSSI", "$singleProperty.property.value", true)
         }
         else if (singleProperty.property.name == "GET_Error_Code")
         {
             error_codes = ["No error", "Side wheel is stuck","Side brush is stuck","Suction motor failed","Brushroll stuck","Side wheel is stuck (2)","Bumper is stuck","Cliff sensor is blocked","Battery power is low","No Dustbin","Fall sensor is blocked","Front wheel is stuck","Switched off","Magnetic strip error","Top bumper is stuck","Wheel encoder error"]
-            sendEvent(name: "Error_Code", value: error_codes[singleProperty.property.value], display: true, displayed: true)
+            eventSender("Error_Code", error_codes[singleProperty.property.value], true)
         }
         else if (singleProperty.property.name == "GET_Robot_Volume_Setting")
         {
-            sendEvent(name: "Robot_Volume", value: "$singleProperty.property.value", display: true, displayed: true)
+            eventSender("Robot_Volume", "$singleProperty.property.value", true)
         }
         else if (singleProperty.property.name == "OTA_FW_VERSION")
         {
-            sendEvent(name: "Firmware_Version", value: "$singleProperty.property.value", display: true, displayed: true)
+            eventSender("Firmware_Version", "$singleProperty.property.value", true)
         }
     }
 
@@ -259,7 +276,7 @@ def grabSharkInfo() {
     else {
         chargingStatusToSend = charging_status[chargingStatusValue]
     }
-    sendEvent(name: "Charging_Status", value: chargingStatusToSend, display: true, displayed: true)
+    eventSender("Charging_Status", chargingStatusToSend, true)
 
     // Operating Mode 
     // operatingModeValue - 0 = STOPPED, 1 = PAUSED, 2 = ON, 3 = OFF
@@ -280,12 +297,16 @@ def grabSharkInfo() {
     }
     else {
         operatingModeToSend = operating_modes[operatingModeValue] 
+        if (operatingModeValue.toString() == "2")
+        {
+            eventSender("switch","on",true)
+        }
     }
-    sendEvent(name: "Operating_Mode", value: operatingModeToSend, display: true, displayed: true)
+    eventSender("Operating_Mode", operatingModeToSend, true)
     operatingMode = operatingModeToSend
 
     def date = new Date()
-    sendEvent(name: "Last_Refreshed", value: "$date", display: true, displayed: true)
+    eventSender("Last_Refreshed", "$date", true)
 }
 
 def initialLogin() {
@@ -468,3 +489,24 @@ def logging(String status, String description) {
     else if (status == "w"){ log.warn(description) }
     else if (status == "e"){ log.error(description) }
 }
+
+def eventSender(String name, String value, Boolean display)
+{
+    if (googleHomeCompat)
+    {
+        if (name == "Operating_Mode")
+        {
+            sendEvent(name: "$name", value: "$value", display: "$display", displayed: "$display")
+            name = "status"
+            if (value == "Charging on Dock" || value == "Resting on Dock")
+            {
+                value = "docked"
+                eventSender("switch","off",true)
+            }
+            value = value.toLowerCase()
+        }
+    }
+    sendEvent(name: "$name", value: "$value", display: "$display", displayed: "$display")
+}
+
+

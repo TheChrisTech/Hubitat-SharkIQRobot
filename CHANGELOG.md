@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clean Specific Room (button) - A dropdown that provides you the ability to clean a specific room (selection via dropdown)
 - Available_Rooms (state) - Will read your map, and see what rooms you have configured. Provides an alphabetized list of rooms.
 
+## [1.0.5]
+
+### Added
+
+- Google Home Compatibility (Preference) - Toggle to add a 'status' state. This state displays one of four values: docked, undocked, running, or paused. This has not been fully tested, so may have some issues (I don't use Google Home).
+- Additional Scheduling Log Messages - If you have both configured or none configured, an error or debug message (accordingly) will be displayed in the logs.
+
+### Changed
+
+- SendEvent Improvements - Created Helper method  more consistent coding.
+- Updated 'switch' state - Simple 'on' or 'off' values to determine the state of your vacuum - Now visible and triggered more frequently for during button presses and updates.
+
 ## [1.0.4]
 
 ### Changed
