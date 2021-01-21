@@ -17,6 +17,7 @@ Please send feedback and/or issues to the Hubitat Forum Thread: https://communit
 | Scheduled State Refresh | If enabled, after you click 'Save Preferences', click the 'Refresh' button to start the schedule. |
 | Refresh Interval | Number of seconds between State Refreshes. |
 | Smart State Refresh | If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. Takes precedence over Scheduled State Refresh. |
+| Google Home Compatibility | Toggle to add a 'status' state |
 | Enable Debug Logging | Adds more logging information. |
 
 <br>
@@ -37,6 +38,7 @@ Please send feedback and/or issues to the Hubitat Forum Thread: https://communit
 | Recharging_To_Resume | This displays whether the Shark is recharging to continue cleaning. |
 | Robot_Volume | This displays the Shark's volume level. |
 | switch | This is the current switch state (on/off). |
+| status | This displays one of four values: docked, undocked, running, or paused. Must have 'Google Home Compatibility' preference enabled.
 
 <br>
 
