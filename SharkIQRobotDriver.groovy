@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.1.0
+ *  Shark IQ Robot v1.1.0a
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -205,7 +205,7 @@ def getRobotInfo(){
     }
 }
 
- def updateRoomList() {
+ def updateAvailableRooms() {
     logging("d", "Updating Available Rooms")
     roomInitial = runPostDatapointsCmd("Mobile_App_Room_Definition", 0)
     logging("d", "Grabbed Mobile App Def.")
