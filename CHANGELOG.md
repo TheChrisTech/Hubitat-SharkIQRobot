@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Clean Specific Room (button) - A dropdown that provides you the ability to clean a specific room (selection via dropdown)
 - Available_Rooms (state) - Will read your map, and see what rooms you have configured. Provides an alphabetized list of rooms.
 
+### Changed
+- Modified the `runPostDatapointsCmd` method to `runDatapointsCmd`. Reason is datapoints data can be returned either using POST or GET. This will prevent duplicate code for similar HTTP operations. (GET specifically needed for Getting Room information.)
+
 ## [1.0.5]
 
 ### Added

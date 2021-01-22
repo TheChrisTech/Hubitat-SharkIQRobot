@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.1.0a
+ *  Shark IQ Robot v1.1.0b
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -24,7 +24,6 @@ import java.text.SimpleDateFormat
 
 metadata {
     definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens", importUrl: "https://raw.githubusercontent.com/TheChrisTech/Hubitat-SharkIQRobot/master/SharkIQRobotDriver.groovy") {
-) {    
         capability "Switch"
         capability "Refresh"
         capability "Momentary"
@@ -115,21 +114,21 @@ def push() {
 }
  
 def on() {
-    runPostDatapointsCmd("SET_Operating_Mode", 2)
+    runDatapointsCmd("SET_Operating_Mode", 2, "POST")
     eventSender("switch","on",true)
     eventSender("Operating_Mode", "Running", true)
     runIn(10, refresh)
 }
  
 def off() {
-    runPostDatapointsCmd("SET_Operating_Mode", 3)
+    runDatapointsCmd("SET_Operating_Mode", 3, "POST")
     eventSender("switch","off",true)
     eventSender("Operating_Mode", "Returning to Dock", true)
     runIn(10, refresh)
 }
 
 def pause() {
-    runPostDatapointsCmd("SET_Operating_Mode", 0)
+    runDatapointsCmd("SET_Operating_Mode", 0, "POST")
     eventSender("switch","off",true)
     eventSender("Operating_Mode", "Paused", true)
     runIn(10, refresh)
@@ -138,15 +137,15 @@ def pause() {
 def setPowerMode(String powermode) {
     power_modes = ["Normal", "Eco", "Max"]
     powermodeint = power_modes.indexOf(powermode)
-    if (powermodeint >= 0) { runPostDatapointsCmd("SET_Power_Mode", powermodeint) }
+    if (powermodeint >= 0) { runDatapointsCmd("SET_Power_Mode", powermodeint, "POST") }
     runIn(10, refresh)
 }
 
 def locate() {
     logging("d", "Locate Pushed.")
-    runPostDatapointsCmd("SET_Find_Device", 1)
+    runDatapointsCmd("SET_Find_Device", 1, "POST")
     eventSender("Locate", "Active", false)
-    runIn(5, runPostDatapointsCmd("SET_Find_Device", 0))
+    runIn(5, runDatapointsCmd("SET_Find_Device", 0, "POST"))
     runIn(10, refresh)
 }
 
@@ -158,8 +157,8 @@ def cleanSpecificRoom(String room) {
     def byteArrayForHex = hubitat.helper.HexUtils.hexStringToByteArray(fullstring)
     def encoded = byteArrayForHex.encodeAsBase64().toString()
     logging("d", encoded)
-    runPostDatapointsCmd("SET_Operating_Mode", 2)
-    runPostDatapointsCmd("SET_Areas_To_Clean", encoded.toString())
+    runDatapointsCmd("SET_Operating_Mode", 2, "POST")
+    runDatapointsCmd("SET_Areas_To_Clean", encoded.toString(), "POST")
 }
 
 def cleanRoomGroup1(){
@@ -207,8 +206,8 @@ def getRobotInfo(){
 
  def updateAvailableRooms() {
     logging("d", "Updating Available Rooms")
-    roomInitial = runPostDatapointsCmd("Mobile_App_Room_Definition", 0)
-    logging("d", "Grabbed Mobile App Def.")
+    roomInitial = runDatapointsCmd("Mobile_App_Room_Definition", 0, "GET")
+    logging("d", "Grabbed Mobile App Def. $roomInitial")
     fileToGrab = roomInitial[0].datapoint.file
     logging("d", "Going to grab this file: $fileToGrab")
     def url = fileToGrab.toURL()
@@ -319,9 +318,8 @@ def initialLogin() {
     getUserProfile()
 }
 
-def runPostDatapointsCmd(String operation, Object operationValue) {
+def runDatapointsCmd(String operation, Object operationValue, String type) {
     initialLogin()
-    logging("d", "operationValue: $operationValue")
     def localDevicePort = (devicePort==null) ? "80" : devicePort
 	def params = [
         uri: "https://ads-field.aylanetworks.com",
@@ -330,7 +328,8 @@ def runPostDatapointsCmd(String operation, Object operationValue) {
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
         body: "{\"datapoint\":{\"value\":\"$operationValue\",\"metadata\":{\"userUUID\":\"$uuid\"}}}"
     ]
-    performHttpPost(params)
+    if (type.toLowerCase() == "post"){ performHttpPost(params) }
+    else if (type.toLowerCase() == "get"){ performHttpGet(params) }
 }
 
 def runGetPropertiesCmd(String operation) {
