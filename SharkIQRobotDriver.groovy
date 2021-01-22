@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.0.5
+ *  Shark IQ Robot v1.0.6
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -54,7 +54,7 @@ metadata {
         input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of seconds between State Refreshes", required: true, displayDuringSetup: true, defaultValue: 60)
         input(name: "smartRefresh", type: "bool", title: "Smart State Refresh", description: "If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. Takes precedence over Scheduled State Refresh.", required: true, displayDuringSetup: true, defaultValue: true)
         input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
-        input(name: "googleHomeCompat", type: "bool", title: "Google Home Compatibility", description: "If enabled, Operating Mode will either be 'docked' or 'undocked'.", defaultValue: false)
+        input(name: "googleHomeCompat", type: "bool", title: "Google Home Compatibility", description: "If enabled, Operating Mode will either be docked, returning to dock, running or paused.", defaultValue: false)
     }
 }
 
@@ -446,10 +446,22 @@ def eventSender(String name, String value, Boolean display)
         {
             sendEvent(name: "$name", value: "$value", display: "$display", displayed: "$display")
             name = "status"
-            if (value == "Charging on Dock" || value == "Resting on Dock")
+            if (value == "Charging on Dock" || value == "Resting on Dock" || value == "Recharging to Continue")
             {
                 value = "docked"
                 eventSender("switch","off",true)
+            }
+            else if (value == "Returning to Dock" || value == "Stopped")
+            {
+               value = "returning to dock" 
+            }
+            else if (value == "Paused")
+            {
+               value = "paused"  
+            }
+            else if (value == "Running")
+            {
+               value = "running"  
             }
             value = value.toLowerCase()
         }

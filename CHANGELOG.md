@@ -5,11 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6]
+
+### Changed
+
+- Updated 'status' state - Actually make it display one of four values: running, paused, returning to dock (previously undocked), or docked.
+
 ## [1.0.5]
 
 ### Added
 
-- Google Home Compatibility (Preference) - Toggle to add a 'status' state. This state displays one of four values: docked, undocked, running, or paused. This has not been fully tested, so may have some issues (I don't use Google Home).
+- Google Home Compatibility (Preference) - Toggle to add a 'status' state. This state displays one of four values: docked, returning to base, running, or paused. This has not been fully tested, so may have some issues (I don't use Google Home).
 - Additional Scheduling Log Messages - If you have both configured or none configured, an error or debug message (accordingly) will be displayed in the logs.
 
 ### Changed
