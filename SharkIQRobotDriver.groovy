@@ -208,9 +208,11 @@ def getRobotInfo(){
  def updateRoomList() {
     logging("d", "Updating Available Rooms")
     roomInitial = runPostDatapointsCmd("Mobile_App_Room_Definition", 0)
+    logging("d", "Grabbed Mobile App Def.")
     fileToGrab = roomInitial[0].datapoint.file
     logging("d", "Going to grab this file: $fileToGrab")
     def url = fileToGrab.toURL()
+    logging("d", "URL Grabbed")
     def fileResults = url.withInputStream{inputStream->
         new groovy.json.JsonSlurper().parse(inputStream)
     }
@@ -218,8 +220,10 @@ def getRobotInfo(){
     fileResults.goZones.each { singleRoom ->
         roomList << singleRoom.name
     }
+    logging("d", "File Parsing Done")
     roomList.sort()
-    sendEvent(name: "Available_Rooms", value: roomList.toString(), display: true, displayed: true)
+    logging("d", "File Sorting Done")
+    eventSender("Avavilable_Rooms", roomList.toString(), true)
  }
 
 def grabSharkInfo() {
