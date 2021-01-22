@@ -24,7 +24,7 @@ import java.util.regex.*
 import java.text.SimpleDateFormat
 
 metadata {
-    definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens") {    
+    definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens", importUrl: "https://raw.githubusercontent.com/TheChrisTech/Hubitat-SharkIQRobot/master/SharkIQRobotDriver.groovy") {
         capability "Switch"
         capability "Refresh"
         capability "Momentary"

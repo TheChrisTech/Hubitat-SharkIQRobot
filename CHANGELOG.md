@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [1.0.6]
 
+### Added
+
+- Added 'importUrl' to metadata definition for easier driver updates. Just click Import on the driver and it'll grab the latest (But will overwrite any manual changes to the driver you have made, so be careful!).
+
 ### Changed
 
 - Updated 'status' state - Actually make it display one of four values: running, paused, returning to dock (previously undocked), or docked.
