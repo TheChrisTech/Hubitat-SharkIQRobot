@@ -10,11 +10,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Clean Room Group1, Clean Room Group2, and Clean Room Group3 (buttons) - These buttons correlate with the 3 preferences on the page named the same. Because of limitations within Hubitat, a dynamic dropdown cannot be provided for easier selection. Therefore, you'll need to manually enter their values. More information can be found in the [README.md's Preferences](https://github.com/TheChrisTech/Hubitat-SharkIQRobot/blob/master/README.md#preferences)
-- Clean Specific Room (button) - A dropdown that provides you the ability to clean a specific room (selection via dropdown)
-- Available_Rooms (state) - Will read your map, and see what rooms you have configured. Provides an alphabetized list of rooms.
+- Clean Specific Room (button) - A dropdown that provides you the ability to clean a specific room (selection via dropdown). This dropdown cannot be dynamically populated, so an `Available_Rooms` state has been provided to provide you that information.
+- Available_Rooms (state) - Will read your map, and see what rooms you have configured. Provides an alphabetized list of rooms. This state is *NOT* part of the standard refresh, so an `Update Available Rooms` button has been added.
+- Update Available Rooms (button) - This button will trigger an update to refresh the `Available_Rooms` state. This cannot be scheduled and not part of the regular `refresh` process.
 
 ### Changed
 - Modified the `runPostDatapointsCmd` method to `runDatapointsCmd`. Reason is datapoints data can be returned either using POST or GET. This will prevent duplicate code for similar HTTP operations. (GET specifically needed for Getting Room information.)
+- If the Shark is `Returning to Dock` (Operating Mode State), and a scheduled/smart refresh isn't enabled, a refresh will occur at the specified `Refresh Interval` (Preference), until the Shark is no longer `Returning to Dock` (Operating Mode State).
 
 ## [1.0.5]
 

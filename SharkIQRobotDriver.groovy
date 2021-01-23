@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.1.0b
+ *  Shark IQ Robot v1.1.0c
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -69,6 +69,12 @@ metadata {
 def refresh() {
     logging("d", "Refresh Triggered.")
     grabSharkInfo()
+    if (device.currentValue('Operating_Mode') == "Returning to Dock")
+    {
+        logging("d", "Operating Mode is 'Returning to Dock'. Scheduling refresh in $refreshInterval seconds.")
+        runIn("$refreshInterval".toInteger(), refresh)
+        return
+    }
     if (smartRefresh && !refreshEnable) 
     {
         if (operatingMode in ["Paused", "Running", "Returning to Dock", "Recharging to Continue"])
@@ -93,13 +99,12 @@ def refresh() {
     }
     else if (smartRefresh && refreshEnable)
     {
-        logging("e", "Not scheduling refresh - Please enable only 1 refresh type (Smart or Scheduled).")
+        logging("w", "Not scheduling refresh - Please enable only 1 refresh type (Smart or Scheduled).")
     }
     else
     {
         logging("d", "No options chosen for scheduled refresh.")
     }
-
 }
 def push() {
     grabSharkInfo()
@@ -159,11 +164,13 @@ def cleanSpecificRoom(String room) {
     logging("d", encoded)
     runDatapointsCmd("SET_Operating_Mode", 2, "POST")
     runDatapointsCmd("SET_Areas_To_Clean", encoded.toString(), "POST")
+    eventSender("switch","on",true)
+    eventSender("Operating_Mode", "Running", true)
+    runIn(10, refresh)
 }
 
 def cleanRoomGroup1(){
     cleanSpecificRoom(roomCleanGroupOne)
-
 }
 
 def cleanRoomGroup2(){
