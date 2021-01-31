@@ -19,6 +19,7 @@ Please send feedback and/or issues to the Hubitat Forum Thread: https://communit
 | Smart State Refresh | If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. Takes precedence over Scheduled State Refresh. |
 | Google Home Compatibility | Toggle to add a 'status' state |
 | Enable Debug Logging | Adds more logging information. |
+| Scheduled Run Time from Shark App | Enter the time Shark is scheduled to run through the Shark App to control dormant smart scheduling, blank to disable and default to 15 minute pings when dormant |
 
 <br>
 
@@ -112,6 +113,15 @@ You can also pull current states to a dashboard tile as well. To do so:
 3. Choose the template "Attribute".
 4. Select the attribute from the dropdown.
 
+### Schedule Types
+| Schedule Type  | Description |
+| ------------- | ------------- |
+| Smart Refresh - Active | The Shark is actively cleaning, paused, or docking. Refreshes will occur every minute by default or as set in Refresh Interval parameter. |
+| Smart Refresh - Charging | The Shark is charging on the dock. Refreshes will occur every 5 minutes until fully charged. |
+| Smart Scheduled Refresh - Dormant | The Shark is fully charged resting on the dock. Refreshes have been scheduled according to the time supplied in Scheduled Run Time from Shark App parameter. |
+| Smart Interval Refresh - Dormant | The Shark is fully charged resting on the dock. Refreshes have been scheduled every 15 minutes. |
+| Unscheduled | No schedule has been set for refreshing the status of your Shark. Modify your preferences to enable scheduled refreshes. |
+| Scheduled Refresh | The Shark's status will be refreshed on a recurring interval as set in the Refresh Interval parameter. |
 
 # Donations
 To support this project, you can make a donation to its current maintainer:
