@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Update Available Rooms (button) - This button will trigger an update to refresh the `Available_Rooms` state. This cannot be scheduled and not part of the regular `refresh` process.
 
 ### Changed
+- Operating_Mode (state) - Changed this to an ENUM type for better handling in Rule Machine.
 - Modified the `runPostDatapointsCmd` method to `runDatapointsCmd`. Reason is datapoints data can be returned either using POST or GET. This will prevent duplicate code for similar HTTP operations. (GET specifically needed for Getting Room information.)
 - If the Shark is `Returning to Dock` (Operating Mode State), and a scheduled/smart refresh isn't enabled, a refresh will occur at the specified `Refresh Interval` (Preference), until the Shark is no longer `Returning to Dock` (Operating Mode State).
 ## [1.0.6]

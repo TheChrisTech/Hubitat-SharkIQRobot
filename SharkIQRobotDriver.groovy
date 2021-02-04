@@ -40,7 +40,7 @@ metadata {
         command "cleanRoomGroup3"
 
         attribute "Battery_Level", "integer"
-        attribute "Operating_Mode", "text"
+        attribute "Operating_Mode", "ENUM"
         attribute "Power_Mode", "text"
         attribute "Charging_Status", "text"
         attribute "RSSI", "text"
