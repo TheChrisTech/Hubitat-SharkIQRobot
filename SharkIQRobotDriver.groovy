@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.0.5
+ *  Shark IQ Robot v1.0.6
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -25,7 +25,7 @@ import java.util.regex.*
 import java.text.SimpleDateFormat
 
 metadata {
-    definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens") {    
+    definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens", importUrl: "https://raw.githubusercontent.com/TheChrisTech/Hubitat-SharkIQRobot/master/SharkIQRobotDriver.groovy") {
         capability "Switch"
         capability "Refresh"
         capability "Momentary"
@@ -56,7 +56,7 @@ metadata {
         input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of minutes between Scheduled State Refreshes. Active only if Scheduled State Refresh is turned on", required: true, displayDuringSetup: true, defaultValue: 1)
         input(name: "smartRefresh", type: "bool", title: "Smart State Refresh", description: "If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. After running, polls less frequently or as scheduled through the Shark App. Takes precedence over Scheduled State Refresh.", required: true, displayDuringSetup: true, defaultValue: true)
         input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
-        input(name: "googleHomeCompat", type: "bool", title: "Google Home Compatibility", description: "If enabled, Operating Mode will either be 'docked' or 'undocked'.", defaultValue: false)
+        input(name: "googleHomeCompat", type: "bool", title: "Google Home Compatibility", description: "If enabled, Operating Mode will either be docked, returning to dock, running or paused.", defaultValue: false)
         input(name: "scheduledTime", type: "time", title: "Scheduled Run Time from Shark App", description: "Enter the time Shark is scheduled to run through the Shark App, blank to disable", required: false, displayDuringSetup: true, defaultValue: null)
     }
 }
@@ -510,10 +510,22 @@ def eventSender(String name, String value, Boolean display)
         {
             sendEvent(name: "$name", value: "$value", display: "$display", displayed: "$display")
             name = "status"
-            if (value == "Charging on Dock" || value == "Resting on Dock")
+            if (value == "Charging on Dock" || value == "Resting on Dock" || value == "Recharging to Continue")
             {
                 value = "docked"
                 eventSender("switch","off",true)
+            }
+            else if (value == "Returning to Dock" || value == "Stopped")
+            {
+               value = "returning to dock" 
+            }
+            else if (value == "Paused")
+            {
+               value = "paused"  
+            }
+            else if (value == "Running")
+            {
+               value = "running"  
             }
             value = value.toLowerCase()
         }
