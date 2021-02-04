@@ -5,11 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.6]
+
+### Added
+
+- Added 'importUrl' to metadata definition for easier driver updates. Just click Import on the driver and it'll grab the latest (But will overwrite any manual changes to the driver you have made, so be careful!).
+- Scheduled Run Time from Shark App (Preference) - Use this setting with Smart State Refresh Enabled to allow refreshes to lie dormant.  This setting should be set to the same time the Shark is scheduled to run through the Shark App.  If disabled, dormant refreshes default to 15 minutes. 
+- Schedule_Type (Attribute) - This Attribute shows the current type of refresh schedule your Shark device is following.
+
+### Changed
+
+- Refresh Interval Change - This preference was changed from seconds to minutes. (eg. a value of '60' now means 1 hour, not 1 minute as it did previously)
+- State Detection Improvements - Fixed a bug where if Recharging to Resume was null, the robot would always show Returning to Dock.
+- Scheduling done by cron instead of RunIn - Since cron scheduling survives a hub reboot, it is a more hands-off way of managing scheduling for your robot vacuum.  Once set, the schedule will faithfully run allowing any rules set up to auto run without intervention.
+- Updated 'status' state - Actually make it display one of four values: running, paused, returning to dock (previously undocked), or docked.
+
 ## [1.0.5]
 
 ### Added
 
-- Google Home Compatibility (Preference) - Toggle to add a 'status' state. This state displays one of four values: docked, undocked, running, or paused. This has not been fully tested, so may have some issues (I don't use Google Home).
+- Google Home Compatibility (Preference) - Toggle to add a 'status' state. This state displays one of four values: docked, returning to base, running, or paused. This has not been fully tested, so may have some issues (I don't use Google Home).
 - Additional Scheduling Log Messages - If you have both configured or none configured, an error or debug message (accordingly) will be displayed in the logs.
 
 ### Changed

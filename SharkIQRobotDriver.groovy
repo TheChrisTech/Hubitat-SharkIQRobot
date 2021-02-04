@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.0.5
+ *  Shark IQ Robot v1.0.6
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -19,12 +19,13 @@
  *
  */
 
-import groovy.json.*
+import java.String.*
+import groovy.time.*
 import java.util.regex.*
 import java.text.SimpleDateFormat
 
 metadata {
-    definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens") {    
+    definition (name: "Shark IQ Robot", namespace: "cstevens", author: "Chris Stevens", importUrl: "https://raw.githubusercontent.com/TheChrisTech/Hubitat-SharkIQRobot/master/SharkIQRobotDriver.groovy") {
         capability "Switch"
         capability "Refresh"
         capability "Momentary"
@@ -43,6 +44,7 @@ metadata {
         attribute "Firmware_Version","text"
         attribute "Last_Refreshed","text"
         attribute "Recharging_To_Resume","text"
+        attribute "Schedule_Type","text"
     }
  
     preferences {
@@ -51,10 +53,11 @@ metadata {
         input(name: "sharkDeviceName", type: "string", title: "Device Name", description: "Name you've given your Shark Device within the App", required: true, displayDuringSetup: true)
         input(name: "mobileType", type: "enum", title: "Mobile Device", description: "Type of Mobile Device your Shark is setup on", required: true, displayDuringSetup: true, options:["Apple iOS", "Android OS"])
         input(name: "refreshEnable", type: "bool", title: "Scheduled State Refresh", description: "If enabled, after you click 'Save Preferences', click the 'Refresh' button to start the schedule.", defaultValue: false)
-        input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of seconds between State Refreshes", required: true, displayDuringSetup: true, defaultValue: 60)
-        input(name: "smartRefresh", type: "bool", title: "Smart State Refresh", description: "If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. Takes precedence over Scheduled State Refresh.", required: true, displayDuringSetup: true, defaultValue: true)
+        input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of minutes between Scheduled State Refreshes. Active only if Scheduled State Refresh is turned on.", required: true, displayDuringSetup: true, defaultValue: 1)
+        input(name: "smartRefresh", type: "bool", title: "Smart State Refresh", description: "If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. After running, polls less frequently or as scheduled through the Shark App. Takes precedence over Scheduled State Refresh.", required: true, displayDuringSetup: true, defaultValue: true)
+        input(name: "scheduledTime", type: "time", title: "Scheduled Run Time from Shark App", description: "Enter the time Shark is scheduled to run through the Shark App, blank to disable. Smart State Refresh must be enabled for this to be triggered.", required: false, displayDuringSetup: true, defaultValue: null)
+        input(name: "googleHomeCompat", type: "bool", title: "Google Home Compatibility", description: "If enabled, Operating Mode will either be docked, returning to dock, running or paused.", defaultValue: false)
         input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
-        input(name: "googleHomeCompat", type: "bool", title: "Google Home Compatibility", description: "If enabled, Operating Mode will either be 'docked' or 'undocked'.", defaultValue: false)
     }
 }
 
@@ -65,31 +68,72 @@ def refresh() {
     {
         if (operatingMode in ["Paused", "Running", "Returning to Dock", "Recharging to Continue"])
         {
-            logging("d", "Refresh scheduled in $refreshInterval seconds.")
-            runIn("$refreshInterval".toInteger(), refresh)
+            if(device.currentValue('Schedule_Type') != "Smart Refresh - Active")
+            {
+                logging("d", "Refresh scheduled in $refreshInterval minutes.")
+                schedule("0 */$refreshInterval * * * ? *", refresh)
+            }
+            eventSender("Schedule_Type", "Smart Refresh - Active", true)
         }
-        else if (operatingMode in ["Charging on Dock"] && batteryCapacity.toString() != "100")
+        else if (operatingMode in ["Charging on Dock"])
         {
-            logging("d", "Refresh scheduled in 300 seconds.")
-            runIn(300, refresh)
+            if(device.currentValue('Schedule_Type') != "Smart Refresh - Charging")
+            {
+                logging("d", "Refresh scheduled in 5 minutes.")
+                schedule("0 */5 * * * ? *", refresh)
+            }  
+            eventSender("Schedule_Type", "Smart Refresh - Charging", true)
+        }        
+        else if (operatingMode in ["Resting on Dock"])
+        {
+			if (scheduledTime != null)
+			{
+				String hour = scheduledTime.substring(11,13)
+				String minute = scheduledTime.substring(14,16)
+				if(device.currentValue('Schedule_Type') != "Smart Scheduled Refresh - Dormant")
+				{
+					logging("d", "Refresh scheduled for $hour:$minute.")
+					schedule("*/30 $minute $hour * * ? *", refresh)
+					eventSender("Schedule_Type", "Smart Scheduled Refresh - Dormant", true)
+				}
+			} 
+			else
+			{
+				if(device.currentValue('Schedule_Type') != "Smart Interval Refresh - Dormant")
+				{
+					logging("d", "Refresh scheduled in 15 minutes.")
+					schedule("0 */15 * * * ? *", refresh)
+					eventSender("Schedule_Type", "Smart Interval Refresh - Dormant", true)
+				}
+			}
         }
         else
         {
             logging("d", "Not scheduling a refresh, because the operatingMode = $operatingMode")
+            unschedule()
+            eventSender("Schedule_Type", "Unscheduled", true)
         }
     }
     else if (!smartRefresh && refreshEnable)
     {
-        logging("d", "Refresh scheduled in $refreshInterval seconds.")
-        runIn("$refreshInterval".toInteger(), refresh)
+        if (device.currentValue('Schedule_Type') != "Scheduled Refresh")
+        {
+            logging("d", "Refresh scheduled in $refreshInterval minutes.")
+            schedule("0 */$refreshInterval * * * ? *", refresh)
+        }
+        eventSender("Schedule_Type", "Scheduled Refresh", true)
     }
     else if (smartRefresh && refreshEnable)
     {
         logging("e", "Not scheduling refresh - Please enable only 1 refresh type (Smart or Scheduled).")
+        unschedule()
+        eventSender("Schedule_Type", "Unscheduled", true)
     }
     else
     {
         logging("d", "No options chosen for scheduled refresh.")
+        unschedule()
+        eventSender("Schedule_Type", "Unscheduled", true)
     }
 
 }
@@ -141,7 +185,7 @@ def locate() {
     runIn(10, refresh)
 }
 
-def getRobotInfo(){
+def getRobotInfo() {
     propertiesResults = runGetPropertiesCmd("names[]=GET_Main_PCB_BL_Version&names[]=GET_Main_PCB_HW_Version&names[]=GET_Main_PCB_FW_Version&names[]=GET_Nav_Module_FW_Version&names[]=GET_Nav_Module_App_Version&names[]=GET_SCM_FW_Version")
     propertiesResults.each { singleProperty ->
         if (singleProperty.property.name == "GET_Main_PCB_BL_Version")
@@ -219,10 +263,12 @@ def grabSharkInfo() {
     // Charging Status
     // chargingStatusValue - 0 = NOT CHARGING, 1 = CHARGING
     charging_status = ["Not Charging", "Charging"]
-    if (device.currentValue('Battery_Level') == "100") {
+    if (device.currentValue('Battery_Level') == "100")
+    {
         chargingStatusToSend = "Fully Charged" 
     }
-    else {
+    else
+    {
         chargingStatusToSend = charging_status[chargingStatusValue]
     }
     eventSender("Charging_Status", chargingStatusToSend, true)
@@ -230,14 +276,18 @@ def grabSharkInfo() {
     // Operating Mode 
     // operatingModeValue - 0 = STOPPED, 1 = PAUSED, 2 = ON, 3 = OFF
     operating_modes = ["Stopped", "Paused", "Running", "Returning to Dock"]
-    if (device.currentValue('Recharging_To_Resume') == "True" && operatingModeValue.toString() == "3") { 
+    if (device.currentValue('Recharging_To_Resume') == "True" && operatingModeValue.toString() == "3")
+    { 
         operatingModeToSend = "Recharging to Continue" 
     }
-    else if (device.currentValue('Recharging_To_Resume') == "False" && operatingModeValue.toString() == "3") {
-        if (device.currentValue('Charging_Status') == "Fully Charged") {
+    else if (device.currentValue('Recharging_To_Resume') != "True" && operatingModeValue.toString() == "3")
+    {
+        if (device.currentValue('Charging_Status') == "Fully Charged")
+        {
             operatingModeToSend = "Resting on Dock" 
         }
-        else if (device.currentValue('Charging_Status') == "Charging"){
+        else if (device.currentValue('Charging_Status') == "Charging")
+        {
             operatingModeToSend = "Charging on Dock" 
         }
         else {
@@ -293,11 +343,13 @@ def runGetPropertiesCmd(String operation) {
 private performHttpPost(params) {
     try {
         httpPost(params) { response ->
-            if(response.getStatus() == 200 || response.getStatus() == 201) {
+            if(response.getStatus() == 200 || response.getStatus() == 201)
+            {
                 results = response.data
                 logging("d", "Response received from Shark in the postResponseHandler. $response.data")
             }
-            else {
+            else
+            {
                 logging("e", "Shark failed. Shark returned ${response.getStatus()}.")
                 logging("e", "Error = ${response.getErrorData()}")
             }
@@ -312,11 +364,13 @@ private performHttpPost(params) {
 private performHttpGet(params) {
     try {
         httpGet(params) { response ->
-            if(response.getStatus() == 200 || response.getStatus() == 201) {
+            if(response.getStatus() == 200 || response.getStatus() == 201)
+            {
                 results = response.data
                 logging("d", "Response received from Shark in the getResponseHandler. $response.data")
             }
-            else {
+            else
+            {
                 logging("e", "Shark failed. Shark returned ${response.getStatus()}.")
                 logging("e", "Error = ${response.getErrorData()}")
             }
@@ -332,11 +386,13 @@ def login() {
     def localDevicePort = (devicePort==null) ? "80" : devicePort
     def app_id = ""
     def app_secret = ""
-    if (mobileType == "Apple iOS") {
+    if (mobileType == "Apple iOS")
+    {
         app_id = "Shark-iOS-field-id"
         app_secret = "Shark-iOS-field-_wW7SiwgrHN8dpU_ugCattOoDk8"
     }
-    else if (mobileType == "Android OS") {
+    else if (mobileType == "Android OS")
+    {
         app_id = "Shark-Android-field-id"
         app_secret = "Shark-Android-field-Wv43MbdXRM297HUHotqe6lU1n-w"
     }
@@ -352,13 +408,15 @@ def login() {
     ]
     try {
         httpPost(params) { response ->
-            if(response.getStatus() == 200 || response.getStatus() == 201) {
+            if(response.getStatus() == 200 || response.getStatus() == 201)
+            {
                 logging("d","Response received from Shark in the postResponseHandler. $response.data")
                 def accesstokenstring = ("$response.data" =~ /access_token:([A-Za-z0-9]*.*?)/)
                 authtoken = accesstokenstring[0][1]
                 return response
             }
-            else {
+            else
+            {
                 logging("e","Shark failed. Shark returned ${response.getStatus()}.")
                 logging("e","Error = ${response.getErrorData()}")
             }
@@ -376,13 +434,15 @@ def getUserProfile() {
     ]
     try {
         httpGet(params) { response ->
-            if(response.getStatus() == 200 || response.getStatus() == 201) {
+            if(response.getStatus() == 200 || response.getStatus() == 201)
+            {
                 logging("d","Response received from Shark in the postResponseHandler. $response.data")
                 def uuidstring = ("$response.data" =~ /uuid:([A-Za-z0-9-]*.*?)/)
                 uuid = uuidstring[0][1]
                 return response
             }
-            else {
+            else
+            {
                 logging("e", "Shark failed. Shark returned ${response.getStatus()}.")
                 logging("e", "Error = ${response.getErrorData()}")
             }
@@ -401,10 +461,12 @@ def getDevices() {
     ]
     try {
         httpGet(params) { response ->
-            if(response.getStatus() == 200 || response.getStatus() == 201) {
+            if(response.getStatus() == 200 || response.getStatus() == 201)
+            {
                 logging("d", "Response received from Shark in the postResponseHandler. $response.data")
                 def devicedsn = ""
-                for (devices in response.data.device ) {
+                for (devices in response.data.device )
+                {
                     if ("$sharkDeviceName" == "${devices.product_name}")
                     {   
                         dsnForDevice = "${devices.dsn}"
@@ -416,7 +478,8 @@ def getDevices() {
                 }
                 return response
             }
-            else {
+            else
+            {
                 logging("e", "Shark failed. Shark returned ${response.getStatus()}.")
                 logging("e", "Error = ${response.getErrorData()}")
             }
@@ -446,15 +509,25 @@ def eventSender(String name, String value, Boolean display)
         {
             sendEvent(name: "$name", value: "$value", display: "$display", displayed: "$display")
             name = "status"
-            if (value == "Charging on Dock" || value == "Resting on Dock")
+            if (value == "Charging on Dock" || value == "Resting on Dock" || value == "Recharging to Continue")
             {
                 value = "docked"
                 eventSender("switch","off",true)
+            }
+            else if (value == "Returning to Dock" || value == "Stopped")
+            {
+               value = "returning to dock" 
+            }
+            else if (value == "Paused")
+            {
+               value = "paused"  
+            }
+            else if (value == "Running")
+            {
+               value = "running"  
             }
             value = value.toLowerCase()
         }
     }
     sendEvent(name: "$name", value: "$value", display: "$display", displayed: "$display")
 }
-
-
