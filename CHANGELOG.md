@@ -15,8 +15,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- Refresh Interval Change - This preference was changed from seconds to minutes. (eg. a value of '60' now means 1 hour, not 1 minute as it did previously)
 - State Detection Improvements - Fixed a bug where if Recharging to Resume was null, the robot would always show Returning to Dock.
-- Scheduling done by cron instead of RunIn - since cron scheduling survives a hub reboot, it is a more hands-off way of managing scheduling for your robot vacuum.  Once set, the schedule will faithfully run allowing any rules set up to auto run without intervention.
+- Scheduling done by cron instead of RunIn - Since cron scheduling survives a hub reboot, it is a more hands-off way of managing scheduling for your robot vacuum.  Once set, the schedule will faithfully run allowing any rules set up to auto run without intervention.
 - Updated 'status' state - Actually make it display one of four values: running, paused, returning to dock (previously undocked), or docked.
 
 ## [1.0.5]

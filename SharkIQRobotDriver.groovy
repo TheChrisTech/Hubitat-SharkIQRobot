@@ -53,11 +53,11 @@ metadata {
         input(name: "sharkDeviceName", type: "string", title: "Device Name", description: "Name you've given your Shark Device within the App", required: true, displayDuringSetup: true)
         input(name: "mobileType", type: "enum", title: "Mobile Device", description: "Type of Mobile Device your Shark is setup on", required: true, displayDuringSetup: true, options:["Apple iOS", "Android OS"])
         input(name: "refreshEnable", type: "bool", title: "Scheduled State Refresh", description: "If enabled, after you click 'Save Preferences', click the 'Refresh' button to start the schedule.", defaultValue: false)
-        input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of minutes between Scheduled State Refreshes. Active only if Scheduled State Refresh is turned on", required: true, displayDuringSetup: true, defaultValue: 1)
+        input(name: "refreshInterval", type: "integer", title: "Refresh Interval", description: "Number of minutes between Scheduled State Refreshes. Active only if Scheduled State Refresh is turned on.", required: true, displayDuringSetup: true, defaultValue: 1)
         input(name: "smartRefresh", type: "bool", title: "Smart State Refresh", description: "If enabled, will only refresh when vacuum is running (per interval), then every 5 minutes until Fully Charged. After running, polls less frequently or as scheduled through the Shark App. Takes precedence over Scheduled State Refresh.", required: true, displayDuringSetup: true, defaultValue: true)
-        input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
+        input(name: "scheduledTime", type: "time", title: "Scheduled Run Time from Shark App", description: "Enter the time Shark is scheduled to run through the Shark App, blank to disable. Smart State Refresh must be enabled for this to be triggered.", required: false, displayDuringSetup: true, defaultValue: null)
         input(name: "googleHomeCompat", type: "bool", title: "Google Home Compatibility", description: "If enabled, Operating Mode will either be docked, returning to dock, running or paused.", defaultValue: false)
-        input(name: "scheduledTime", type: "time", title: "Scheduled Run Time from Shark App", description: "Enter the time Shark is scheduled to run through the Shark App, blank to disable", required: false, displayDuringSetup: true, defaultValue: null)
+        input(name: "debugEnable", type: "bool", title: "Enable Debug Logging", defaultValue: true)
     }
 }
 
@@ -95,7 +95,6 @@ def refresh() {
 					logging("d", "Refresh scheduled for $hour:$minute.")
 					schedule("*/30 $minute $hour * * ? *", refresh)
 					eventSender("Schedule_Type", "Smart Scheduled Refresh - Dormant", true)
-
 				}
 			} 
 			else
@@ -532,5 +531,3 @@ def eventSender(String name, String value, Boolean display)
     }
     sendEvent(name: "$name", value: "$value", display: "$display", displayed: "$display")
 }
-
-
