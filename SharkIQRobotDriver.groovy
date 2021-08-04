@@ -29,6 +29,7 @@ metadata {
         capability "Switch"
         capability "Refresh"
         capability "Momentary"
+        capability "Battery"
         command "locate"
         command "pause"
         command "setPowerMode", [[name:"Set Power Mode to", type: "ENUM",description: "Set Power Mode", constraints: ["Eco", "Normal", "Max"]]]
@@ -222,6 +223,7 @@ def grabSharkInfo() {
         {
             eventSender("Battery_Level", "$singleProperty.property.value", true)
             batteryCapacity = singleProperty.property.value
+            eventSender("battery",batteryCapacity.toString(),true)
         }
         else if (singleProperty.property.name == "GET_Recharging_To_Resume")
         {
