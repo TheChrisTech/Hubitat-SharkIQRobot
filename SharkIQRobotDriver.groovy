@@ -1,5 +1,5 @@
 /**
- *  Shark IQ Robot v1.0.6
+ *  Shark IQ Robot v1.0.7
  *
  *  Copyright 2021 Chris Stevens
  *
@@ -29,22 +29,23 @@ metadata {
         capability "Switch"
         capability "Refresh"
         capability "Momentary"
+        capability "Battery"
         command "locate"
         command "pause"
         command "setPowerMode", [[name:"Set Power Mode to", type: "ENUM",description: "Set Power Mode", constraints: ["Eco", "Normal", "Max"]]]
         command "getRobotInfo", [[name:"Get verbose robot information and push to logs."]]
 
         attribute "Battery_Level", "integer"
-        attribute "Operating_Mode", "text"
-        attribute "Power_Mode", "text"
-        attribute "Charging_Status", "text"
-        attribute "RSSI", "text"
-        attribute "Error_Code","text"
-        attribute "Robot_Volume","text"
-        attribute "Firmware_Version","text"
-        attribute "Last_Refreshed","text"
-        attribute "Recharging_To_Resume","text"
-        attribute "Schedule_Type","text"
+        attribute "Operating_Mode", "string"
+        attribute "Power_Mode", "string"
+        attribute "Charging_Status", "string"
+        attribute "RSSI", "string"
+        attribute "Error_Code","string"
+        attribute "Robot_Volume","string"
+        attribute "Firmware_Version","string"
+        attribute "Last_Refreshed","string"
+        attribute "Recharging_To_Resume","string"
+        attribute "Schedule_Type","string"
     }
  
     preferences {
@@ -222,6 +223,7 @@ def grabSharkInfo() {
         {
             eventSender("Battery_Level", "$singleProperty.property.value", true)
             batteryCapacity = singleProperty.property.value
+            eventSender("battery",batteryCapacity.toString(),true)
         }
         else if (singleProperty.property.name == "GET_Recharging_To_Resume")
         {
@@ -300,6 +302,10 @@ def grabSharkInfo() {
         {
             eventSender("switch","on",true)
         }
+    }
+    if (operatingModeValue != 2)
+    {
+        eventSender("switch","off",true)
     }
     eventSender("Operating_Mode", operatingModeToSend, true)
     operatingMode = operatingModeToSend
