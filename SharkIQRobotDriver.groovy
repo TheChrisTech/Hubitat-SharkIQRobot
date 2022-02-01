@@ -1,7 +1,7 @@
 /**
- *  Shark IQ Robot v1.0.7
+ *  Shark IQ Robot v1.0.8
  *
- *  Copyright 2021 Chris Stevens
+ *  Copyright 2021-2022 Chris Stevens
  *
  *  Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except
  *  in compliance with the License. You may obtain a copy of the License at:
@@ -324,7 +324,7 @@ def runPostDatapointsCmd(String operation, Integer operationValue) {
     initialLogin()
     def localDevicePort = (devicePort==null) ? "80" : devicePort
 	def params = [
-        uri: "https://ads-field.aylanetworks.com",
+        uri: "https://ads-field-39a9391a.aylanetworks.com",
 		path: "/apiv1/dsns/$dsnForDevice/properties/$operation/datapoints.json",
         requestContentType: "application/json",
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
@@ -337,7 +337,7 @@ def runGetPropertiesCmd(String operation) {
     initialLogin()
     def localDevicePort = (devicePort==null) ? "80" : devicePort
 	def params = [
-        uri: "https://ads-field.aylanetworks.com",
+        uri: "https://ads-field-39a9391a.aylanetworks.com",
 		path: "/apiv1/dsns/$dsnForDevice/properties.json",
         requestContentType: "application/json",
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
@@ -406,7 +406,7 @@ def login() {
     
     //log.info body
 	def params = [
-        uri: "https://ads-field.aylanetworks.com",
+        uri: "https://ads-field-39a9391a.aylanetworks.com",
 		path: "/users/sign_in.json",
         requestContentType: "application/json",
         headers: ["Content-Type": "application/json", "Accept": "*/*"],
@@ -434,7 +434,7 @@ def login() {
 
 def getUserProfile() {
 	def params = [
-        uri: "https://ads-field.aylanetworks.com",
+        uri: "https://ads-field-39a9391a.aylanetworks.com",
 		path: "/users/get_user_profile.json",
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
     ]
@@ -461,7 +461,7 @@ def getUserProfile() {
 
 def getDevices() {
 	def params = [
-        uri: "https://ads-field.aylanetworks.com",
+        uri: "https://ads-field-39a9391a.aylanetworks.com",
 		path: "/apiv1/devices.json",
         headers: ["Content-Type": "application/json", "Accept": "*/*", "Authorization": "auth_token $authtoken"],
     ]
